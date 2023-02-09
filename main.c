@@ -29,7 +29,7 @@ void main(void) {	// main loop
 		debounce_0 = 2 * debounce_0 + GP0;
 		
 		// mask and test for short press
-	    if ((debounce_0 && short_mask) == short_test) {
+		if ((debounce_0 && short_mask) == short_test) {
 			if (mode == 0)
 				GP5 ^= 1;			// toggle bypass relay
 			else
