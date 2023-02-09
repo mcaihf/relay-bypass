@@ -5,32 +5,43 @@
 #include "header.h" // Include the header (configuration bits)
 
 #define shift_reg_clk 50	// Wait time between shift register updates for debouncing (default = 50)
-#define short_test 0x8001	// masking for 0b1XXX XXXX XXXX X001 : hold ftsw for 100ms to activate short press
+
+// mask and test for 0b1XXX XXXX XXXX X001 : hold ftsw for 100ms to activate short press
+#define short_test 0x8001
 #define short_mask 0x8007
-#define long_threshold 	0x01	// default = 0b0000 0000 0000 0001 : hold ftsw for 800ms to activate long press
+
+// test for 'full' debounce register <0b0000 0000 0000 0001> : hold ftsw for 800ms to activate long press
+#define long_threshold 	0x01	
+
 /*
-Footswitch is active low (0). Debouncing works but looking for a one (ftsw release) after a set number of zeros
-e.g. 0b1111 1100 0000 0001 will give a required button hold time of 9*shift_reg_clk (9 zeros * 50ms = 450ms)
+Footswitch is active low (0). Debouncing works but looking for a one (footswitch release) after a set number of zeros
+(e.g. 0b1111 1100 0000 0001) will give a required button hold time of num_zeros * shift_reg_clk (9 zeros * 50ms = 450ms)
 */
 
-void main(void) { // main loop
+void main(void) {	// main loop
     setup();
 	
     uint8_t mode = 0; // variable that will define the pedal's state: on or off
     uint16_t debounce_0 = 0xFFFF; // shift register for debouncing GPIO0
 	
     while (1) {
-        debounce_0 = 2 * debounce_0 + GP0; // debounce GP0
-		// shift bits left and add a 0 if ftsw is pressed, add 1 if not pressed
-		if ((debounce_0 && short_mask) == short_test) {
+		// debounce footswitch, shift bits left and add a 0 if ftsw is pressed, add 1 if not pressed
+		debounce_0 = 2 * debounce_0 + GP0;
+		
+		// mask and test for short press
+	    if ((debounce_0 && short_mask) == short_test) {
 			if (mode == 0)
-				GP5 ^= 1;	// toggle bypass relay
+				GP5 ^= 1;			// toggle bypass relay
 			else
-				GP4 ^= 1;	// toggle octave relay
+				GP4 ^= 1;			// toggle octave relay
+			debounce_0 = 0xFFFF;	// reset debounce register
 		}
+		// mask and test for long press
 		if (debounce_0 == long_threshold) {
-			mode ^= 1;		// if long press, switch between bypass and octave mode
+			mode ^= 1;				// if long press, switch between bypass and octave mode
+			debounce_0 = 0xFFFF;	// reset debounce register
 		}
+		// wait before retriggering shift register
 		_delay_ms(shift_reg_clk);
     }
 }
