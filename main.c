@@ -28,7 +28,7 @@ void main(void) {	// main loop
 	
     while (1) {
 		// debounce footswitch, shift bits left and add a 0 if ftsw is pressed, add 1 if not pressed
-		debounce_0 = 2 * debounce_0 + GP0;
+		debounce_0 = debouce_0 + debounce_0 + GP0;
 		
 		// mask and test for short press
 		if ((debounce_0 & short_mask) == short_test) {
